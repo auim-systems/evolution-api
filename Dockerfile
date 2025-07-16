@@ -13,6 +13,8 @@ COPY ./package.json ./tsconfig.json ./
 
 RUN npm install
 
+RUN npm install dotenv-cli -g
+
 COPY ./src ./src
 COPY ./public ./public
 COPY ./prisma ./prisma
