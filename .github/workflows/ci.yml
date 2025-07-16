@@ -1,0 +1,45 @@
+name: ScRiPt FoDãoOoO PaRa BiLdAr o dOcKeR e DePlOyAr No RaNcHeR BoLaDãO
+env:
+  IMAGE_NAME: evolution-api
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+
+    - name: Build Docker image
+      run: docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }} -t img .
+
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+
+    - name: Login to GitHub Container Registry
+      run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Push Docker image to GitHub Container Registry
+      run: |
+        IMAGE_ID=ghcr.io/${{ github.repository }}/$IMAGE_NAME
+        # Regex pra deixar tudo minusculo
+        IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+        IMAGE_TAG=${{ steps.extract_branch.outputs.branch }}
+        docker tag img $IMAGE_ID:$IMAGE_TAG
+        docker push $IMAGE_ID:$IMAGE_TAG
+        echo imagem gerada: $IMAGE_ID:$IMAGE_TAG
